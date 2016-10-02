@@ -8,15 +8,30 @@ var expect = require('chai').expect
 var rewrite = require('./')
 
 describe('popsicle rewrite', function () {
-  nock('http://rewriten.com')
-    .get('/http://example.com/')
-    .reply(200)
+  var rewritePlugin = rewrite({
+    'non-matching': 'rewritten-non-matching',
+    'm.(.)ching': 'rewrit$1en'
+  })
 
-  it('should prefix all urls', function () {
-    return popsicle.get('http://example.com')
-      .use(rewrite('pattern'))
+  it('should rewrite matching url', function () {
+    nock('http://rewritten.com')
+      .get('/')
+      .reply(200)
+    return popsicle.get('http://matching.com/')
+      .use(rewritePlugin)
       .then(function (res) {
-        expect(res.url).to.equal('http://rewriten.com')
+        expect(res.url).to.equal('http://rewritten.com/')
+      })
+  })
+
+  it('should not rewrite non-matching url', function () {
+    nock('http://other.com')
+      .get('/')
+      .reply(200)
+    return popsicle.get('http://other.com/')
+      .use(rewritePlugin)
+      .then(function (res) {
+        expect(res.url).to.equal('http://other.com/')
       })
   })
 })
